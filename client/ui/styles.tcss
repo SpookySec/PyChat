@@ -1,0 +1,64 @@
+Screen {
+    layout: horizontal;
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+#layout {
+    height: 100%;
+    width: 100%;
+}
+
+#main {
+    width: 1fr;
+    height: 100%;
+    padding: 1 2;
+}
+
+#chat-log {
+    height: 1fr;
+    background: #f8fafc;
+    border: tall #e2e8f0;
+    padding: 1 2;
+}
+
+#chat-input {
+    height: 3;
+    margin-top: 1;
+    border: tall #0ea5e9;
+    background: #ffffff;
+    color: #0f172a;
+}
+
+#sidebar {
+    width: 32;
+    height: 100%;
+    padding: 1 1 1 0;
+}
+
+#sidebar-title {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 1;
+    text-align: center;
+    border: tall #0f172a;
+}
+
+#user-list {
+    height: 1fr;
+    background: #f8fafc;
+    border: tall #e2e8f0;
+    padding: 1;
+}
+
+.status-good {
+    color: #16a34a;
+}
+
+.status-warn {
+    color: #f59e0b;
+}
+
+.status-info {
+    color: #0ea5e9;
+}
