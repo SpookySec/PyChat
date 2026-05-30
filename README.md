@@ -30,13 +30,13 @@ python -m server.main
 Run the client UI:
 
 ```
-python -m client.main --username alice
+python -m client.main --username spooky
 ```
 
 Headless mode:
 
 ```
-python -m client.main --headless --username alice
+python -m client.main --headless --username spooky
 ```
 
 ## Commands
@@ -44,6 +44,10 @@ python -m client.main --headless --username alice
 - `/nick <name>` change nickname
 - `/me <action>` action message
 - `/quit` or `/exit` disconnect
+
+## Screenshot
+
+![screenshot](./screenshot.png)
 
 ## Project layout
 ```
@@ -68,4 +72,4 @@ term-chat/
 
 ## Notes
 - All network packets are JSON lines terminated by `\n`.
-- The server keeps a per-session user list; offline users stay visible in grey.
+- The server keeps a per-session user list; offline users stay visible in gray.
