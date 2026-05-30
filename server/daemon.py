@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from asyncio import StreamReader, StreamWriter
+from typing import Callable
 from shared.protocol import (
     BasePacket,
     ConnectAckPacket,
@@ -39,8 +40,10 @@ async def handle_client(
     reader: StreamReader,
     writer: StreamWriter,
     state: ServerState,
+    log: Callable[[str], None],
 ) -> None:
     username: str | None = None
+    peer = writer.get_extra_info("peername")
     try:
         initial_line = await reader.readline()
         if not initial_line:
@@ -57,6 +60,7 @@ async def handle_client(
                     message="First packet must be CONNECT.",
                 ),
             )
+            log(f"rejected connection from {peer}")
             return
         if state.username_taken(packet.username):
             await state.send_packet(
@@ -66,9 +70,17 @@ async def handle_client(
                     message="Username already in use.",
                 ),
             )
+            log(f"name collision '{packet.username}' from {peer}")
             return
         username = packet.username
         state.add(writer, username)
+        stats = state.stats_snapshot()
+        log(
+            "joined"
+            f" user={username} peer={peer}"
+            f" users={stats['active_users']}"
+            f" uptime={stats['uptime']:.1f}s"
+        )
         await state.send_packet(
             writer,
             ConnectAckPacket(
@@ -93,6 +105,7 @@ async def handle_client(
                 content = packet.content.strip()
                 if not content:
                     continue
+                state.record_message()
                 await broadcast_and_cleanup(
                     state,
                     MessagePacket(sender=username, content=content),
@@ -105,6 +118,13 @@ async def handle_client(
         if username is not None:
             removed = state.remove(writer)
             if removed:
+                stats = state.stats_snapshot()
+                log(
+                    "left"
+                    f" user={removed}"
+                    f" users={stats['active_users']}"
+                    f" uptime={stats['uptime']:.1f}s"
+                )
                 await broadcast_and_cleanup(
                     state, UserLeftPacket(username=removed)
                 )
@@ -112,9 +132,12 @@ async def handle_client(
 
 
 async def run_server(
-    host: str, port: int, state: ServerState
+    host: str,
+    port: int,
+    state: ServerState,
+    log: Callable[[str], None],
 ) -> asyncio.AbstractServer:
     server = await asyncio.start_server(
-        lambda r, w: handle_client(r, w, state), host, port
+        lambda r, w: handle_client(r, w, state, log), host, port
     )
     return server

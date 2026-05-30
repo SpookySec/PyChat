@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import time
+from datetime import datetime
 from dataclasses import dataclass
 
 from rich.text import Text
+from textual import events
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
@@ -23,6 +26,7 @@ from ..network.node import ChatClient
 class ChatLine:
     text: str
     style: str | None = None
+    timestamp: float | None = None
 
 
 class ChatEvent(Message):
@@ -75,6 +79,11 @@ class ChatApp(App):
         )
         self.run_worker(self.start_network(), exclusive=True, group="network")
 
+    async def on_key(self, event: events.Key) -> None:
+        input_widget = self.query_one("#chat-input", Input)
+        if not input_widget.has_focus:
+            input_widget.focus()
+
     async def on_shutdown(self) -> None:
         await self._client.close()
 
@@ -99,6 +108,7 @@ class ChatApp(App):
                     ChatLine(
                         f"Connected as {self._username}",
                         "status-good",
+                        time.time(),
                     )
                 )
             )
@@ -109,6 +119,7 @@ class ChatApp(App):
                     ChatLine(
                         f"{packet.sender}: {packet.content}",
                         "status-info",
+                        packet.timestamp,
                     )
                 )
             )
@@ -122,6 +133,7 @@ class ChatApp(App):
                     ChatLine(
                         f"* {packet.username} joined",
                         "status-good",
+                        packet.timestamp,
                     )
                 )
             )
@@ -134,6 +146,7 @@ class ChatApp(App):
                     ChatLine(
                         f"* {packet.username} left",
                         "status-warn",
+                        packet.timestamp,
                     )
                 )
             )
@@ -158,16 +171,36 @@ class ChatApp(App):
         list_view = self.query_one("#user-list", ListView)
         list_view.clear()
         for name in event.users:
-            list_view.append(ListItem(Static(name)))
+            label = Text("● ", style="green")
+            label.append(name, style="green")
+            list_view.append(ListItem(Static(label)))
 
     async def on_connect_failed(self, event: ConnectFailed) -> None:
-        self._append_line(f"Connection failed: {event.reason}", "status-warn")
+        self._append_line(
+            f"Connection failed: {event.reason}",
+            "status-warn",
+            time.time(),
+        )
         await asyncio.sleep(0.5)
         self.exit()
 
-    def _append_line(self, message: str, style: str | None = None) -> None:
+    def _append_line(
+        self,
+        message: str,
+        style: str | None = None,
+        timestamp: float | None = None,
+    ) -> None:
         log = self.query_one("#chat-log", RichLog)
-        text = Text(message)
+        stamp = self._format_timestamp(timestamp)
+        text = Text(f"[{stamp}] ")
+        text.stylize("timestamp", 0, len(stamp))
+        text.append(message)
         if style:
-            text.stylize(style)
+            text.stylize(style, len(stamp) + 1)
         log.write(text)
+
+    @staticmethod
+    def _format_timestamp(timestamp: float | None) -> str:
+        if timestamp is None:
+            timestamp = time.time()
+        return datetime.fromtimestamp(timestamp).strftime("%H:%M:%S")

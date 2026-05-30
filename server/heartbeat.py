@@ -18,13 +18,8 @@ async def heartbeat_loop(
 ) -> None:
     while True:
         await asyncio.sleep(interval)
-        now = time.monotonic()
         dead_writers: list[StreamWriter] = []
         for writer in state.writers():
-            last = state.last_seen(writer)
-            if last is None or now - last > timeout:
-                dead_writers.append(writer)
-                continue
             ok = await state.send_packet(writer, PingPacket())
             if not ok:
                 dead_writers.append(writer)

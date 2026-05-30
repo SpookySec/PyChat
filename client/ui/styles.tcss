@@ -1,7 +1,7 @@
 Screen {
     layout: horizontal;
-    background: #e2e8f0;
-    color: #0f172a;
+    background: #000000;
+    color: #e5e7eb;
 }
 
 #layout {
@@ -12,53 +12,59 @@ Screen {
 #main {
     width: 1fr;
     height: 100%;
-    padding: 1 2;
+    padding: 0 1;
 }
 
 #chat-log {
     height: 1fr;
-    background: #f8fafc;
-    border: tall #e2e8f0;
-    padding: 1 2;
+    background: #000000;
+    border: none;
+    padding: 0 1;
 }
 
 #chat-input {
     height: 3;
     margin-top: 1;
-    border: tall #0ea5e9;
-    background: #ffffff;
-    color: #0f172a;
+    border: heavy #ef4444;
+    background: #050505;
+    color: #f9fafb;
+    padding: 0 1;
 }
 
 #sidebar {
-    width: 32;
+    width: 24;
     height: 100%;
-    padding: 1 1 1 0;
+    padding: 0 1 0 0;
 }
 
 #sidebar-title {
-    background: #0f172a;
-    color: #ffffff;
-    padding: 1;
+    background: #111111;
+    color: #f87171;
+    padding: 0 1;
     text-align: center;
-    border: tall #0f172a;
+    border: none;
+    text-style: bold;
 }
 
 #user-list {
     height: 1fr;
-    background: #f8fafc;
-    border: tall #e2e8f0;
-    padding: 1;
+    background: #000000;
+    border: none;
+    padding: 0 1;
 }
 
 .status-good {
-    color: #16a34a;
+    color: #22c55e;
 }
 
 .status-warn {
-    color: #f59e0b;
+    color: #ef4444;
 }
 
 .status-info {
-    color: #0ea5e9;
+    color: #f87171;
+}
+
+.timestamp {
+    color: #6b7280;
 }
