@@ -1,4 +1,4 @@
-# Term-Chat
+# PyChat
 
 A real-time terminal chatroom app with an asyncio server and a Textual TUI client.
 
@@ -51,7 +51,7 @@ python -m client.main --headless --username spooky
 
 ## Project layout
 ```
-term-chat/
+PyChat/
 ├── requirements.txt
 ├── shared/
 │   ├── protocol.py

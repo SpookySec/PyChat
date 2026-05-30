@@ -58,7 +58,7 @@ class ConnectFailed(Message):
 
 class ChatApp(App):
     CSS_PATH = "styles.tcss"
-    TITLE = "Term-Chat"
+    TITLE = "PyChat"
 
     def __init__(self, host: str, port: int, username: str) -> None:
         super().__init__()

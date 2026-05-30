@@ -1,7 +1,7 @@
-# Term-Chat Presentation (Under 10 Minutes)
+# PyChat Presentation (Under 10 Minutes)
 
 ## Slide 1 - Title (0:30)
-**Term-Chat: Async Terminal Chatroom**
+**PyChat: Async Terminal Chatroom**
 - Python 3.11, asyncio, Textual, Pydantic
 - Real-time chat with a clean terminal UI
 

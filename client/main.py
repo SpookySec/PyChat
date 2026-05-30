@@ -31,7 +31,7 @@ async def run_headless(host: str, port: int, username: str) -> None:
     ack_success = True
 
     def render_banner() -> None:
-        title = Text("Term-Chat", style="bold magenta")
+        title = Text("PyChat", style="bold magenta")
         subtitle = Text(
             f"Headless mode | {username}@{host}:{port}",
             style="cyan",
