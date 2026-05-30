@@ -7,8 +7,12 @@ from typing import Final
 from shared.protocol import (
     ConnectAckPacket,
     MessagePacket,
+    NickAckPacket,
+    NickPacket,
     UserJoinedPacket,
     UserLeftPacket,
+    UserListPacket,
+    UserRenamedPacket,
 )
 
 from rich import box
@@ -50,6 +54,10 @@ async def run_headless(host: str, port: int, username: str) -> None:
         help_text = Text()
         help_text.append("/help", style="green")
         help_text.append(" - show this message\n")
+        help_text.append("/nick <name>", style="cyan")
+        help_text.append(" - change nickname\n")
+        help_text.append("/me <action>", style="cyan")
+        help_text.append(" - action message\n")
         help_text.append("/quit", style="red")
         help_text.append(" - disconnect and exit\n")
         help_text.append("/exit", style="red")
@@ -58,27 +66,53 @@ async def run_headless(host: str, port: int, username: str) -> None:
         console.print(Panel(help_text, title="Help", box=box.SQUARE))
 
     async def on_packet(packet) -> None:
-        nonlocal ack_success
+        nonlocal ack_success, username
         if isinstance(packet, ConnectAckPacket):
             if not packet.success:
                 ack_success = False
                 console.print(f"[bold red][server][/bold red] {packet.message}")
                 stop_event.set()
             else:
-                users = ", ".join(packet.users) if packet.users else "(none)"
+                users = ", ".join(
+                    user.username for user in packet.users if user.online
+                )
+                users = users or "(none)"
                 console.print(
                     f"[bold green][server][/bold green] connected. users={users}"
                 )
+                for entry in packet.history:
+                    console.print(
+                        f"{entry.sender}: {entry.content}"
+                    )
                 ack_event.set()
             return
         if isinstance(packet, MessagePacket):
-            console.print(
-                f"[bold cyan]{packet.sender}[/bold cyan]: {packet.content}"
-            )
+            if packet.is_action:
+                console.print(
+                    f"[bold red]* {packet.sender} {packet.content}[/bold red]"
+                )
+            else:
+                console.print(
+                    f"[bold cyan]{packet.sender}[/bold cyan]: {packet.content}"
+                )
         elif isinstance(packet, UserJoinedPacket):
             console.print(f"[green]* {packet.username} joined[/green]")
         elif isinstance(packet, UserLeftPacket):
             console.print(f"[yellow]* {packet.username} left[/yellow]")
+        elif isinstance(packet, UserListPacket):
+            online = ", ".join(
+                user.username for user in packet.users if user.online
+            )
+            console.print(f"[dim]online: {online or '(none)'}[/dim]")
+        elif isinstance(packet, UserRenamedPacket):
+            console.print(
+                f"[magenta]* {packet.old_username} is now {packet.new_username}[/magenta]"
+            )
+        elif isinstance(packet, NickAckPacket):
+            if packet.success and packet.new_username:
+                username = packet.new_username
+            color = "green" if packet.success else "red"
+            console.print(f"[{color}]{packet.message}[/{color}]")
 
     client = ChatClient(on_packet)
     render_banner()
@@ -102,6 +136,22 @@ async def run_headless(host: str, port: int, username: str) -> None:
             continue
         if message == "/help":
             render_help()
+            continue
+        if message.startswith("/nick "):
+            new_name = message.split(" ", 1)[1].strip()
+            if new_name:
+                await client.send_packet(NickPacket(new_username=new_name))
+            continue
+        if message.startswith("/me "):
+            action = message.split(" ", 1)[1].strip()
+            if action:
+                await client.send_packet(
+                    MessagePacket(
+                        sender=username,
+                        content=action,
+                        is_action=True,
+                    )
+                )
             continue
         if message in quit_tokens:
             stop_event.set()

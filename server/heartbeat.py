@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from asyncio import StreamWriter
 from typing import Awaitable, Callable
 

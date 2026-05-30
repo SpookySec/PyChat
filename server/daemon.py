@@ -8,10 +8,15 @@ from shared.protocol import (
     ConnectAckPacket,
     ConnectPacket,
     MessagePacket,
+    NickAckPacket,
+    NickPacket,
     PingPacket,
     PongPacket,
+    TypingPacket,
     UserJoinedPacket,
     UserLeftPacket,
+    UserListPacket,
+    UserRenamedPacket,
     packet_from_json,
 )
 from .state import ServerState
@@ -86,11 +91,15 @@ async def handle_client(
             ConnectAckPacket(
                 success=True,
                 message="ok",
-                users=state.users(),
+                users=state.user_list(),
+                history=state.history_snapshot(),
             ),
         )
         await broadcast_and_cleanup(
             state, UserJoinedPacket(username=username)
+        )
+        await broadcast_and_cleanup(
+            state, UserListPacket(users=state.user_list())
         )
         while True:
             line = await reader.readline()
@@ -106,9 +115,64 @@ async def handle_client(
                 if not content:
                     continue
                 state.record_message()
+                message_packet = MessagePacket(
+                    sender=username,
+                    content=content,
+                    is_action=packet.is_action,
+                )
+                state.add_history(message_packet)
                 await broadcast_and_cleanup(
                     state,
-                    MessagePacket(sender=username, content=content),
+                    message_packet,
+                )
+            elif isinstance(packet, TypingPacket):
+                await broadcast_and_cleanup(
+                    state,
+                    TypingPacket(
+                        username=username,
+                        is_typing=packet.is_typing,
+                    ),
+                )
+            elif isinstance(packet, NickPacket):
+                new_name = packet.new_username
+                if not new_name:
+                    await state.send_packet(
+                        writer,
+                        NickAckPacket(
+                            success=False,
+                            message="Username cannot be empty.",
+                        ),
+                    )
+                    continue
+                if state.username_taken(new_name):
+                    await state.send_packet(
+                        writer,
+                        NickAckPacket(
+                            success=False,
+                            message="Username already in use.",
+                        ),
+                    )
+                    continue
+                old_name = username
+                username = new_name
+                state.rename_writer(writer, new_name)
+                await state.send_packet(
+                    writer,
+                    NickAckPacket(
+                        success=True,
+                        message="ok",
+                        new_username=new_name,
+                    ),
+                )
+                await broadcast_and_cleanup(
+                    state,
+                    UserRenamedPacket(
+                        old_username=old_name,
+                        new_username=new_name,
+                    ),
+                )
+                await broadcast_and_cleanup(
+                    state, UserListPacket(users=state.user_list())
                 )
             elif isinstance(packet, PongPacket):
                 state.touch(writer)
@@ -127,6 +191,9 @@ async def handle_client(
                 )
                 await broadcast_and_cleanup(
                     state, UserLeftPacket(username=removed)
+                )
+                await broadcast_and_cleanup(
+                    state, UserListPacket(users=state.user_list())
                 )
         await close_writer(writer)
 

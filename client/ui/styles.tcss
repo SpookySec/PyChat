@@ -22,6 +22,12 @@ Screen {
     padding: 0 1;
 }
 
+#typing-indicator {
+    height: 1;
+    padding: 0 1;
+    color: #f87171;
+}
+
 #chat-input {
     height: 3;
     margin-top: 1;
